@@ -4,12 +4,12 @@
 \alias{ngraMatrix}
 \title{Compute n-Gram Frequencies Dataframe}
 \usage{
-ngraMatrix(data, n = 2, silent = FALSE)
+ngraMatrix(data, k = 4, silent = FALSE)
 }
 \arguments{
 \item{data}{a dataframe with as many columns as species and one row per orthologous protein. The rows and columns must be named accordingly.}
 
-\item{n}{a positive integer between 1 and 4.}
+\item{k}{a positive integer, between 1 and 5, indicating the k-mer of the words to be counted.}
 
 \item{silent}{logical, set to FALSE to avoid loneliness.}
 }
@@ -23,7 +23,7 @@ Computes the n-gram frequencies dataframe for the protein and species provides.
 The argument prot can be obtained using orth() and orth.seq().
 }
 \examples{
-ngraMatrix(bovids[,1:3], n = 2)
+ngraMatrix(bovids[,1:3], k = 2)
 }
 \references{
 Stuart et al. Bioinformatics 2002; 18:100-108.

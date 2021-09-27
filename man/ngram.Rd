@@ -4,12 +4,12 @@
 \alias{ngram}
 \title{Compute n-Gram Frequencies Vector}
 \usage{
-ngram(prot, n = 1)
+ngram(prot, k = 4)
 }
 \arguments{
 \item{prot}{a character string corresponding to the primary structure of the protein.}
 
-\item{n}{a positive integer between 1 and 4.}
+\item{k}{a positive integer, between 1 and 5, indicating the k-mer of the words to be counted.}
 }
 \value{
 A dataframe with two columns, the first one given the peptides and the second one the corresponding absolute frequency.
@@ -21,11 +21,11 @@ Computes the n-gram frequencies vector for a given protein.
 The one letter code for amino acids is used (capital).
 }
 \examples{
-ngram(bovids$Bos_taurus[1], n = 3)
+ngram(bovids$Bos_taurus[1], k = 3)
 }
 \references{
 Stuart et al. Bioinformatics 2002; 18:100-108.
 }
 \seealso{
-ngraMatrix(), svdgram()
+ngraMatrix(), ffp(), svdgram()
 }

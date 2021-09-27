@@ -1,25 +1,27 @@
 ## ----------- envnj.R ------------- ##
 #                                     #
 #    envnj                            #
-#    vcos                             #
+#    env.fasta                        #
 #    vdis                             #
 #                                     #
 ## --------------------------------- ##
 
 
 ## ----------------------------------------------------------- ##
-#               envnj(data, r, aa, outgroup)                    #
+#        envnj(data, r, aa, metric, clustering, outgroup)       #
 ## ----------------------------------------------------------- ##
 #' Build Trees Based on the Environment Around the Indicated Amino Acid(s)
 #' @description Builds trees based on the environment around the indicated amino acid(s).
-#' @usage envnj(data, r = 10, aa = 'all', outgroup = 'any')
+#' @usage envnj(data, r = 10, aa = 'all', metric = "cosine", clustering = "nj", outgroup = 'any')
 #' @param data input data must be a dataframe where each row corresponds to a protein sequence and each column to a species.
 #' @param r a positive integer indicating the radius of the sequence segment considered as environment.
 #' @param aa the amino acid(s) to be used to encoded the species.
+#' @param metric character string indicating the metric (see metrics() to see the methods allowed).
+#' @param clustering string indicating the clustering method, either "nj" or "upgma".
 #' @param outgroup when a rooted tree is desired, it indicates the species to be used as outgroup.
 #' @details This function builds alignment-independent phylogenetic trees.
 #' @return A list with two objects, the first one is an inter-species distance matrix. The second one is an object of class 'phylo'.
-#' @seealso otu.space()
+#' @seealso otu.space(), metrics()
 #' @examples \donttest{
 #' data(bovids)
 #' envnj(bovids[, 7:11], aa = "all", outgroup = "Pseudoryx_nghetinhensis")
@@ -27,15 +29,21 @@
 #' @importFrom ape nj
 #' @importFrom ape root
 #' @importFrom ape plot.phylo
+#' @importFrom phangorn upgma
 #' @export
 
-envnj <- function(data, r = 10, aa = "all", outgroup = 'any'){
+envnj <- function(data, r = 10, aa = "all", metric = "cosine", clustering = "nj", outgroup = 'any'){
+
   space <- otu.space(data = data, r = r, aa = aa)
-  cosDist <- vcos(space, silent = TRUE, digits = 6)
-  d <- vdis(cosDist)
-  d[is.na(d)] <- 0
-  d <- d + t(d)
-  t <- ape::nj(d)
+  d <- metrics(vset = space, method = metric)
+  if (clustering == 'nj'){
+    t <- ape::nj(d)
+  } else if (clustering == 'upgma'){
+    t <- phangorn::upgma(d)
+  } else {
+    warning("NJ method has been selected")
+  }
+
   if (outgroup[1] != "any"){
     t <- ape::root(t, outgroup = outgroup)
   }
@@ -43,49 +51,91 @@ envnj <- function(data, r = 10, aa = "all", outgroup = 'any'){
   return(list(d, t))
 }
 
-## ----------------------------------------------------------- ##
-#               vcos(vectors, silent, digits = 3)               #
-## ----------------------------------------------------------- ##
-#' Compute Pairwise Cosines of the Angles Between Vectors
-#' @description Computes pairwise cosines of the angles between vectors.
-#' @usage vcos(vectors, silent = FALSE, digits = 3)
-#' @param vectors a named list (or dataframe) containing n-dimensional vectors.
-#' @param silent logical, set to FALSE to avoid loneliness.
-#' @param digits integer indicating the number of decimal places.
-#' @details Cosines are standard measure of vector similarity. If the angle between two vectors in n-dimensional space is small, then the individual elements of their vectors must be very similar to each other in value, and the calculated cosine derived from these values is near one. If the vectors point in opposite directions, then the individual elements of their vectors must be very dissimilar in value, an the calculated cosine is near minus one.
-#' @return A triangular matrix with the cosines of the angles formed between the  given vectors.
-#' @seealso vdis()
-#' @examples vcos(otu.space(bovids[, 1:4]))
+## ---------------------------------------------------- ##
+##                    env.fasta()                       ##
+## ---------------------------------------------------- ##
+#' Build Trees Based on the Environment Around the Indicated Amino Acid(s)
+#' @description Builds trees based on the environment around the indicated amino acid(s).
+#' @usage env.fasta(file, r = 10, aa = 'all', out.file = 'any')
+#' @param file path to the single multispecies fasta file to be used as input.
+#' @param r a positive integer indicating the radius of the sequence segment considered as environment.
+#' @param aa the amino acid(s) to be used to encoded the species.
+#' @param out.file path and name of output file. Only if intermediate results data want to be saved (see details).
+#' @details This function builds alignment-independent phylogenetic trees. The input data is a fasta file. When an out.file path is provided, the environment sequences of each species and the vector representing each species are saved in the path provided.
+#' @return A list with two objects, the first one is an inter-species distance matrix. The second one is an object of class 'phylo'.
+#' @seealso envnj(), fastaconc()
+#' @examples \dontrun{env.fasta(file = "./data_t/sample5.fasta")}
+#' @importFrom ape nj
+#' @importFrom ape plot.phylo
+#' @importFrom seqinr read.fasta
 #' @export
 
-vcos <- function(vectors, silent = FALSE, digits = 3){
+env.fasta <- function(file, r = 10, aa = "all", out.file = 'any'){
 
-  # Check all the vectors have the same dimension
-  n <- unlist(lapply(vectors, length))
-  if (length(unique(n)) != 1){
-    stop("All the vectors must have the same dimension")
+  if (out.file != 'any'){
+    dir.create(path = out.file)
+    dir.create(paste(out.file, "/Extracted_Environments_r", r, sep = ""))
+    dir.create(paste(out.file, "/Species_Vectors_r", r, sep = ""))
   }
 
-  # Matrix to hold the cosines
-  n <- length(n) # number of vectors
-  cosines <- matrix(rep(NA, n*n), ncol = n)
+  if (aa == "all"){
+    naa <- 20
+  } else {
+    naa <- length(aa)
+  }
+  # Read the input fasta file:
+  f <- seqinr::read.fasta(file, seqtype = 'AA', as.string = TRUE)
+  species <- names(f)
 
-  for (i in 1:(n-1)){
-    if (!silent){print(i)}
-    for (j in (i+1):n){
-      t <- crossprod(vectors[[i]], vectors[[j]])
-      t <- t / sqrt(crossprod(vectors[[i]]) * crossprod(vectors[[j]]))
-      cosines[i,j] <- round(t, digits)
+  space <- matrix(rep(NA, naa * 40*r * length(species)), ncol = length(species))
+  colnames(space) <- species
+
+  for (i in 1:length(species)){
+    print(paste(i, "  -----  ", species[i]))
+
+    pdata <- data.frame(sp = as.character(f[[i]]))
+    names(pdata) <- species[i]
+
+    env <- EnvNJ::env.sp(data = pdata, sp = species[i], r = r, silent = FALSE)
+    v <- EnvNJ::otu.vector(env)
+    v <- as.vector(v)
+
+    if (out.file != "any"){
+      suppressWarnings(
+        save(env, file = paste(out.file, "/Extracted_Environments_r", r, "/env_",
+                               species[i], ".Rda", sep = ""))
+      )
+      suppressWarnings(
+        save(v, file = paste(out.file, "/Species_Vectors_r", r, "/v_",
+                             species[i], ".Rda", sep = ""))
+      )
     }
+
+    space[, i] <- v
   }
-  cosines[is.nan(cosines)] <- 0 # The 0 vector is orthogonal to any other vector
-  colnames(cosines) <- names(vectors)
-  return(cosines)
+  space <- as.data.frame(space)
+
+  if (out.file != 'any'){
+    save(space,
+         file = paste(out.file, "/Species_Vector_Subspace_r", r, ".Rda", sep = ""))
+
+    print(paste("Results saved at ", out.file, sep = ""))
+  }
+
+  cosDist <- EnvNJ::vcos(space, silent = TRUE, digits = 6)
+  d <- cos2dis(cosDist)
+  d[is.na(d)] <- 0
+  d <- d + t(d)
+  t <- ape::nj(d)
+
+  ape::plot.phylo(t, use.edge.length = FALSE, cex = 0.5)
+
+  return(list(d, t))
 }
 
-## ----------------------------------------------------------- ##
-#                         vdis(cos)                             #
-## ----------------------------------------------------------- ##
+## ---------------------------------------------------- ##
+##                    vdis()                            ##
+## ---------------------------------------------------- ##
 #' Compute Pairwise Distances Between Vectors
 #' @description Computes pairwise distances between vectors.
 #' @usage vdis(cos)
@@ -97,16 +147,18 @@ vcos <- function(vectors, silent = FALSE, digits = 3){
 #' data(bovids)
 #' vectors = otu.space(bovids[, 7:11])
 #' cosData = vcos(vectors)
-#' disData = vdis(cosData)
+#' disData = suppressWarnings(vdis(cosData))
 #' @export
+
 
 vdis <- function(cos){
 
-  # Check that cos is a squere matrix
+  .Deprecated("cos2dis")
+  # Check that cos is a square matrix
   if (!is.matrix(cos)){
-    stop("The argument must be a matrix")
+    stop("The input must be a matrix")
   } else if (length(unique(dim(cos))) != 1){
-    stop("The argument matrix must be square")
+    stop("The input matrix must be square")
   }
 
   d <- cos

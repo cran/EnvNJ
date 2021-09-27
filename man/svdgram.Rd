@@ -25,7 +25,7 @@ Computes phylogenetic trees using an n-gram and SVD approach.
 When the matrix passed as argument is a matrix of peptide-protein, the function implement the method described by Stuart et al. 2002 (see references).
 }
 \examples{
-a <- ngraMatrix(bovids[, 1:4], n = 2)[[2]][, -1]
+a <- ngraMatrix(bovids[, 1:4], k = 2)[[2]][, -1]
 species <- names(a)
 svdgram(matrix = a, rank = 4, species = species, SVS = FALSE)
 }

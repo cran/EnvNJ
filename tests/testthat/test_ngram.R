@@ -1,28 +1,5 @@
 library(EnvNJ)
-context("SVD-n-Gram")
-
-## ---------------------------------------------- ##
-#        Testing the function aa.comp              #
-## ---------------------------------------------- ##
-test_that("the function aa.comp() works properly", {
-
-  skip_on_cran()
-  skip_on_travis()
-
-  a <- aa.comp("ACEEAGRKDNW", uniprot = FALSE)
-  b <- aa.comp("P01009")
-  c <- aa.comp('P010091')
-
-  expect_is(a, 'data.frame')
-  expect_equal(dim(a), c(20, 2))
-
-
-  expect_is(b, 'data.frame')
-  expect_equal(dim(a), c(20, 2))
-  expect_equal(sum(b$frequency), 418)
-
-  expect_is(c, 'NULL')
-})
+context("n-Gram")
 
 
 ## ----------------------------------------------------------- ##
@@ -31,10 +8,10 @@ test_that("the function aa.comp() works properly", {
 test_that("ngram() works properly", {
 
   s <- "MSAGARRRPR"
-  a <- ngram(s, n = 1)
-  b <- ngram(s, n = 2)
-  c <- ngram(s, n = 3)
-  d <- ngram(s, n = 4)
+  a <- ngram(s, k = 1)
+  b <- ngram(s, k = 2)
+  c <- ngram(s, k = 3)
+  d <- ngram(s, k = 4)
 
   expect_is(a, 'data.frame')
   expect_equal(length(a), 2)
@@ -55,6 +32,7 @@ test_that("ngram() works properly", {
   expect_equal(length(d), 2)
   expect_equal(nrow(d), 160000)
   expect_equal(sum(d$frequency), 7)
+
 })
 
 
@@ -65,7 +43,7 @@ test_that("ngraMatrix() works properly", {
 
   prot <- data.frame(sp1 = c("MSPGASRGPR", "MKMADRSGKI", "MACTIQKAEA"),
                      sp2 = c("MSAGARRRPR", "MADRGKLVPG", "MCCAIQKAEA"))
-  a <- ngraMatrix(prot, n = 1)
+  a <- ngraMatrix(prot, k = 1)
   a1 <- a[[1]]
   a2 <- a[[2]]
 
@@ -79,7 +57,7 @@ test_that("ngraMatrix() works properly", {
   expect_equal(sum(apply(a1[-1], 2, sum) == rep(10,6)), 6)
   expect_equal(sum(apply(a2[-1], 2, sum) == rep(30,2)), 2)
 
-  b <- ngraMatrix(prot, n = 2)
+  b <- ngraMatrix(prot, k = 2)
   b1 <- b[[1]]
   b2 <- b[[2]]
 
@@ -93,7 +71,7 @@ test_that("ngraMatrix() works properly", {
   expect_equal(sum(apply(b1[-1], 2, sum) == rep(9,6)), 6)
   expect_equal(sum(apply(b2[-1], 2, sum) == rep(27,2)), 2)
 
-  c <- ngraMatrix(prot, n = 3)
+  c <- ngraMatrix(prot, k = 3)
   c1 <- c[[1]]
   c2 <- c[[2]]
 
@@ -107,7 +85,7 @@ test_that("ngraMatrix() works properly", {
   expect_equal(sum(apply(c1[-1], 2, sum) == rep(8,6)), 6)
   expect_equal(sum(apply(c2[-1], 2, sum) == rep(24,2)), 2)
 
-  d <- ngraMatrix(prot, n = 4)
+  d <- ngraMatrix(prot, k = 4)
   d1 <- d[[1]]
   d2 <- d[[2]]
 
@@ -122,13 +100,14 @@ test_that("ngraMatrix() works properly", {
   expect_equal(sum(apply(d2[-1], 2, sum) == rep(21,2)), 2)
 })
 
+
 ## ----------------------------------------------------------- ##
 #                Testing the function svdgram                   #
 ## ----------------------------------------------------------- ##
 test_that("svdgram() works properly", {
 
-  a <- ngraMatrix(bovids, n = 2)[[1]][, -1]
-  b <- ngraMatrix(bovids, n = 2)[[2]][, -1]
+  a <- ngraMatrix(bovids, k = 2)[[1]][, -1]
+  b <- ngraMatrix(bovids, k = 2)[[2]][, -1]
   species <- names(b)
 
   ta <- svdgram(matrix = a, rank = c(50, 143), species = species, SVS = TRUE)
@@ -145,23 +124,3 @@ test_that("svdgram() works properly", {
   expect_equal(names(tb[1]), "rank-11")
 })
 
-## ----------------------------------------------------------- ##
-#                Testing the function vtree                     #
-## ----------------------------------------------------------- ##
-test_that( "vtree() works properly", {
-
-  mymatrix <- ngraMatrix(bovids[, 6:11], n = 2)[[2]][, 2:7]
-  a <- vtree(mymatrix, outgroup = "Pseudoryx_nghetinhensis")
-
-  expect_is(mymatrix, 'data.frame')
-  expect_equal(dim(mymatrix), c(400,6))
-
-  expect_is(a, 'list')
-  expect_equal(length(a), 2)
-  expect_is(a[[1]], 'matrix')
-  expect_equal(dim(a[[1]]), c(6,6))
-  expect_is(a[[2]], 'phylo')
-  expect_equal(length(a[[2]]), 4)
-  expect_equal(a[[2]]$Nnode, 4)
-
-})

@@ -1,0 +1,3 @@
+v_Bison_bison_prot.txt
+v_Bos_taurus_prot.txt
+v_Dummy_species_prot.txt

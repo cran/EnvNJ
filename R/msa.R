@@ -20,7 +20,7 @@
 #' @examples \dontrun{
 #' data(bovids)
 #' msa.merge(bovids)}
-#' @importFrom bio3d write.fasta
+#' @importFrom seqinr write.fasta
 #' @importFrom bio3d seqbind
 #' @importFrom bio3d seqaln
 #' @export
@@ -48,7 +48,8 @@ msa.merge <- function(data, outfile = 'any'){
     }
   }
   if (outfile != 'any'){
-    bio3d::write.fasta(ids = rownames(msa), seqs =  msa, file = outfile)
+    sequences <- apply(msa, 1, function(x) paste(x, collapse = ""))
+    seqinr::write.fasta(sequences = as.list(sequences), names = sp, file.out = outfile)
   }
 
   if (file.exists("aln.fa")){

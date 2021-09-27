@@ -1,0 +1,13 @@
+NEWS
+====
+
+v0.1.3
+
+Since EnvNJ was designed to infer phylogenies using protein-coding genomic data, the case where a species only presents a single residue (env.matrix) of a certain amino acid, or even this amino acid is absent in the proteome (otu.vector) were not considered in the previous version (v0.1.2). However, since EnvNJ can also be nicely used to infer gene trees, in this new version the ancillary function env.matrices() and otu.vector() have been modified to consider the aforementioned possibilities. 
+
+In the previous version (v0.1.2) EnvNJ trees were built using the function envnj() that uses a dataframe containing the input data. In the current version, we have added a new function, envfascpp(), that carries out this work but it takes fasta files as input. So, now, data can be provided either as dataframe (envnj) or as fasta file (envfascpp). On this last case, the process is much faster since envfascpp() invokes a compiled C++ executable. Thus, in order to use this function you should download the script 'envfas.cpp' that you will find at https://bitbucket.org/jcaledo/envnj/src/master/AncillaryCode/envfas.cpp. Afterwards, you should compile the program and place the executable in the path of your choice. In addition, the user can also find utilities to convert between diverse data formats (i.e. df2fasta(), d.phy2df()).
+
+New functionalities have also been added. For instance:
+
+* metrics() allows the user to choose between 28 different metrics to compute a distance matrix.  
+* ncdnj() builds trees based on Normalized Compression Distances. This function use zpaq to compress files. Thus, the zpaq software must be installed on your system and in the search path for executables if you wish to use this function.

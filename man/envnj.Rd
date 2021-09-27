@@ -4,7 +4,7 @@
 \alias{envnj}
 \title{Build Trees Based on the Environment Around the Indicated Amino Acid(s)}
 \usage{
-envnj(data, r = 10, aa = 'all', outgroup = 'any')
+envnj(data, r = 10, aa = 'all', metric = "cosine", clustering = "nj", outgroup = 'any')
 }
 \arguments{
 \item{data}{input data must be a dataframe where each row corresponds to a protein sequence and each column to a species.}
@@ -12,6 +12,10 @@ envnj(data, r = 10, aa = 'all', outgroup = 'any')
 \item{r}{a positive integer indicating the radius of the sequence segment considered as environment.}
 
 \item{aa}{the amino acid(s) to be used to encoded the species.}
+
+\item{metric}{character string indicating the metric (see metrics() to see the methods allowed).}
+
+\item{clustering}{string indicating the clustering method, either "nj" or "upgma".}
 
 \item{outgroup}{when a rooted tree is desired, it indicates the species to be used as outgroup.}
 }
@@ -31,5 +35,5 @@ envnj(bovids[, 7:11], aa = "all", outgroup = "Pseudoryx_nghetinhensis")
 }
 }
 \seealso{
-otu.space()
+otu.space(), metrics()
 }

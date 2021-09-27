@@ -1,0 +1,3 @@
+Bos_taurus_prot.fasta
+Bison_bison_prot.fasta
+Dummy_species_prot.fasta
